@@ -23,6 +23,15 @@ swift build
 
 On first launch it looks for `~/Library/Application Support/Adium 2.0/Users/*/Logs`; if not found, use **Choose Logs Folder…** (Cmd-O) to point it at wherever your Adium logs live.
 
+## Exporting
+
+Use **File ▸ Export**, the toolbar's export button, or right-click:
+
+- **A conversation** (right-click a date, or the current selection) → one `.txt` or `.html` file.
+- **All conversations with a contact** (right-click a contact) → a single file containing every conversation, oldest first.
+
+Text exports are plain `[time] Name: message` lines. HTML exports are a standalone page that keeps message formatting (bold, links, colors) and follows light/dark mode. Legacy HTML logs are embedded as-is. Images referenced by relative paths inside a log (e.g. file transfers) aren't copied alongside the export.
+
 ## Packaging & releases
 
 ```

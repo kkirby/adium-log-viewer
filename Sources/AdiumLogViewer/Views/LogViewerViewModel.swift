@@ -37,6 +37,10 @@ final class LogViewerViewModel {
 
     private(set) var foldersThatFailedToRead: [String] = []
 
+    private(set) var isExporting = false
+    /// Set when an export fails; `ContentView` presents it as an alert.
+    var exportError: String?
+
     private var discoveryService: LogDiscoveryService?
     private var searchService: SearchIndexService?
 
@@ -170,25 +174,7 @@ final class LogViewerViewModel {
         isLoadingTranscript = true
         Task {
             let result = await Task.detached(priority: .userInitiated) {
-                let outcome: TranscriptLoadResult.Outcome
-                do {
-                    let transcript: Transcript
-                    switch log.format {
-                    case .xmlChatlogBundle, .xmlChatlogFlatFile:
-                        guard let xmlURL = discoveryService.xmlFileURL(forChatlogItem: log.url, format: log.format) else {
-                            throw TranscriptParseError.notAChatlog
-                        }
-                        transcript = try ChatLogXMLParser.parse(fileAt: xmlURL)
-                    case .legacyHTML:
-                        transcript = try LegacyHTMLLogParser.parse(fileAt: log.url)
-                    }
-                    outcome = .success(transcript)
-                } catch let error as TranscriptParseError {
-                    outcome = .failure(error)
-                } catch {
-                    outcome = .failure(.fileUnreadable(underlying: error))
-                }
-                return TranscriptLoadResult(metadata: log, outcome: outcome)
+                TranscriptLoader.load(log, discovery: discoveryService)
             }.value
 
             isLoadingTranscript = false
@@ -230,4 +216,59 @@ final class LogViewerViewModel {
         searchQuery = ""
         searchResults = []
     }
+
+    // MARK: - Export
+
+    /// Exports a single conversation, prompting for a destination first.
+    func exportConversation(_ log: ChatLogMetadata, as format: ExportFormat) {
+        guard let discoveryService else { return }
+        let stamp = log.date.map { Self.fileDateFormatter.string(from: $0) } ?? "Undated"
+        guard let destination = ExportPanel.chooseDestination(
+            defaultName: "\(log.to) \(stamp)", format: format) else { return }
+
+        // Reuse the already-parsed transcript when exporting what's on screen.
+        let cached = transcriptResult.flatMap { $0.metadata.id == log.id ? $0 : nil }
+        runExport(title: "Conversation with \(log.to)", format: format, destination: destination) {
+            [cached ?? TranscriptLoader.load(log, discovery: discoveryService)]
+        }
+    }
+
+    /// Exports every conversation with a contact into one file, oldest first.
+    func exportAllConversations(with contact: ContactSummary, as format: ExportFormat) {
+        guard let discoveryService else { return }
+        guard let destination = ExportPanel.chooseDestination(
+            defaultName: "\(contact.contactUID) - All Conversations", format: format) else { return }
+
+        let knownLogs = logsByContact[contact.id]
+        runExport(title: "Conversations with \(contact.contactUID)", format: format, destination: destination) {
+            let logs = try knownLogs ?? discoveryService.discoverLogs(for: contact)
+            return TranscriptExporter.chronological(logs).map {
+                TranscriptLoader.load($0, discovery: discoveryService)
+            }
+        }
+    }
+
+    private func runExport(title: String, format: ExportFormat, destination: URL,
+                           load: @escaping @Sendable () throws -> [TranscriptLoadResult]) {
+        isExporting = true
+        Task {
+            do {
+                try await Task.detached(priority: .userInitiated) {
+                    let results = try load()
+                    let document = TranscriptExporter.render(results, format: format, title: title)
+                    try document.write(to: destination, atomically: true, encoding: .utf8)
+                }.value
+            } catch {
+                exportError = "Could not export to \(destination.lastPathComponent): \(error.localizedDescription)"
+            }
+            isExporting = false
+        }
+    }
+
+    private static let fileDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd HH.mm"
+        return f
+    }()
 }

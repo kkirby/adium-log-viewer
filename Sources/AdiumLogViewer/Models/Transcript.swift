@@ -27,6 +27,10 @@ struct StatusEvent: Identifiable, Hashable {
     let rawInnerXML: String?
 
     var displayName: String { alias ?? sender }
+
+    var summary: String {
+        "\(displayName) changed status to \(statusType.isEmpty ? "unknown" : statusType)"
+    }
 }
 
 /// A chat window lifecycle event (`<event>`), e.g. "windowOpened"/"windowClosed".
@@ -35,6 +39,14 @@ struct WindowEvent: Identifiable, Hashable {
     let eventType: String
     let sender: String
     let time: Date?
+
+    var summary: String {
+        switch eventType {
+        case "windowOpened": return "Conversation opened"
+        case "windowClosed": return "Conversation closed"
+        default: return eventType.isEmpty ? "Event" : eventType
+        }
+    }
 }
 
 /// A legacy `.html`/`.html.bak`/`.AdiumHTMLLog` transcript, rendered as a single

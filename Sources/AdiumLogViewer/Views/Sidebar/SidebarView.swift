@@ -17,6 +17,9 @@ struct SidebarView: View {
                             ForEach(contacts) { contact in
                                 ContactRowView(contact: contact)
                                     .tag(contact.id)
+                                    .contextMenu {
+                                        ExportContactButtons(viewModel: viewModel, contact: contact)
+                                    }
                             }
                         }
                     } else {

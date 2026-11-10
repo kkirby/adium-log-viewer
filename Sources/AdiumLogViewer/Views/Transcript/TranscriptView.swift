@@ -18,6 +18,9 @@ struct TranscriptView: View {
         }
         .toolbar {
             ToolbarItem {
+                ExportToolbarMenu(viewModel: viewModel)
+            }
+            ToolbarItem {
                 Toggle(isOn: Binding(
                     get: { viewModel.showTimestamps },
                     set: { viewModel.showTimestamps = $0 }

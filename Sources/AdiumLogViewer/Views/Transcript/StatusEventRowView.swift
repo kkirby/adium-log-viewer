@@ -16,7 +16,7 @@ struct StatusEventRowView: View {
     var body: some View {
         HStack(spacing: 4) {
             Spacer()
-            Text(summary)
+            Text(status.summary)
             if let rendered {
                 Text(rendered)
             }
@@ -35,10 +35,6 @@ struct StatusEventRowView: View {
             }.value
         }
     }
-
-    private var summary: String {
-        "\(status.displayName) changed status to \(status.statusType.isEmpty ? "unknown" : status.statusType)"
-    }
 }
 
 struct WindowEventRowView: View {
@@ -55,7 +51,7 @@ struct WindowEventRowView: View {
     var body: some View {
         HStack {
             Spacer()
-            Text(summary)
+            Text(event.summary)
             if showTimestamps, let time = event.time {
                 Text("(\(Self.timeFormatter.string(from: time)))")
             }
@@ -64,13 +60,4 @@ struct WindowEventRowView: View {
         .font(.caption)
         .foregroundStyle(.secondary)
         .padding(.vertical, 2)
-    }
-
-    private var summary: String {
-        switch event.eventType {
-        case "windowOpened": return "Conversation opened"
-        case "windowClosed": return "Conversation closed"
-        default: return event.eventType.isEmpty ? "Event" : event.eventType
-        }
-    }
-}
+    }}

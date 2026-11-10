@@ -61,7 +61,12 @@ enum MessageHTMLRenderer {
 
     /// Crude tag-stripping fallback so one malformed message never blanks a row.
     static func plainTextFallback(innerXML: String) -> AttributedString {
-        var text = innerXML
+        AttributedString(stripTags(innerXML))
+    }
+
+    /// Removes tags and decodes the basic entities `ChatLogXMLParser` emits.
+    static func stripTags(_ markup: String) -> String {
+        var text = markup
         while let range = text.range(of: "<[^>]+>", options: .regularExpression) {
             text.removeSubrange(range)
         }
@@ -70,6 +75,6 @@ enum MessageHTMLRenderer {
             .replacingOccurrences(of: "&lt;", with: "<")
             .replacingOccurrences(of: "&gt;", with: ">")
             .replacingOccurrences(of: "&quot;", with: "\"")
-        return AttributedString(text)
+        return text
     }
 }

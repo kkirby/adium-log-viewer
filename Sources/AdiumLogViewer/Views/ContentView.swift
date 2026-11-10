@@ -34,6 +34,26 @@ struct ContentView: View {
                     .help("Choose a Different Logs Folder")
                 }
             }
+            .overlay(alignment: .bottom) {
+                if viewModel.isExporting {
+                    HStack(spacing: 6) {
+                        ProgressView().controlSize(.small)
+                        Text("Exporting…").font(.caption)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(.regularMaterial, in: Capsule())
+                    .padding(.bottom, 12)
+                }
+            }
+            .alert("Export Failed", isPresented: Binding(
+                get: { viewModel.exportError != nil },
+                set: { if !$0 { viewModel.exportError = nil } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.exportError ?? "")
+            }
             .overlay(alignment: .top) {
                 if !viewModel.foldersThatFailedToRead.isEmpty {
                     Text("\(viewModel.foldersThatFailedToRead.count) folder(s) could not be read")

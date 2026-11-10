@@ -17,6 +17,9 @@ struct DateListView: View {
                 List(viewModel.logsForSelectedContact, selection: logSelectionBinding) { log in
                     DateListRowView(log: log)
                         .tag(log.id)
+                        .contextMenu {
+                            ExportConversationButtons(viewModel: viewModel, log: log)
+                        }
                 }
             }
         }

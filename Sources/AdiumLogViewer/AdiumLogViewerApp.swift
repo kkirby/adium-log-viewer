@@ -23,6 +23,7 @@ struct AdiumLogViewerApp: App {
                 }
                 .keyboardShortcut("f", modifiers: [.command])
             }
+            ExportCommands(viewModel: viewModel)
         }
     }
 }
